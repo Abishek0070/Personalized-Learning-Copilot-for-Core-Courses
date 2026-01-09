@@ -1,0 +1,7 @@
+.env
+venv/
+.venv/
+__pycache__/
+database.db
+index_abi/
+index_*/
