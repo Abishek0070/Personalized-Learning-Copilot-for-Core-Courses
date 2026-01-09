@@ -25,6 +25,8 @@ Students and professionals are drowning in information. Textbooks, research pape
 Unlike standard RAG apps that just answer questions, this system displays **agentic reasoning**:
 
 *   **🧠 Structured Planning Agent**: It doesn't just summarize; it understands time constraints. Give it an exam date, and it logically breaks down the syllabus into a daily schedule using structured output generation.
+*   **🔄 LangGraph Orchestration: The system doesn't just call APIs; it runs a Stateful Workflow. Using LangGraph, the Planner and Quizzer communicate through a shared "State." If the Quizzer detects low mastery, it can trigger a "Re-Planner" loop to automatically simplify upcoming tasks—true autonomous behavior.
+*   **⚡ Ultra-Low Latency Memory (Redis): We use Redis as a high-speed Short-Term Memory layer. This allows the agent to recall the last 10 turns of a conversation in sub-milliseconds, ensuring fluid, human-like dialogue without redundant database hits.
 *   **💾 Long-Term Memory**: It retains context across sessions using a hybrid memory architecture (SQL for structured progress, Vector Store for semantic knowledge).
 *   **🎯 Active Assessment**: It proactively generates quizzes to verify knowledge, rather than passively waiting for user input.
 
@@ -36,34 +38,33 @@ Unlike standard RAG apps that just answer questions, this system displays **agen
 graph TD
     User((User))
     
-    subgraph "FastAPI Server"
-        API[API Gateway]
-        Auth[Auth Service]
-        Planner[Study Planner Agent]
-        Quizzer[Quiz Agent]
-        Chat[RAG Chat Engine]
+    subgraph "Agent Orchestration (LangGraph)"
+        Graph[StateGraph]
+        Planner[Planner Node]
+        Quizzer[Quizzer Node]
+        RePlan{Mastery Check}
+        
+        Graph --> Planner
+        Planner --> Quizzer
+        Quizzer --> RePlan
+        RePlan -->|Score < 50| Planner
+        RePlan -->|Score > 50| END((End))
     end
     
-    subgraph "Memory & Storage"
-        SQL[(SQLite DB\nUser Data & History)]
+    subgraph "Memory Layers"
+        Redis[(Redis\nShort-Term Memory)]
+        SQL[(SQLite DB\nLong-Term History)]
         Vector[(FAISS Vector Store\nPDF Knowledge)]
     end
     
-    subgraph "AI Brain (Groq)"
-        Llama[Llama 3.1-8b-Instant]
-    end
+    User --> |Chat Request| Redis
+    Redis --> |Context| Llama[Llama 3.1-8b via Groq]
+    Llama --> |Save History| Redis
+    Llama --> |Persist| SQL
+    
+    User --> |Upload| Vector
+    Graph --> |Retrieval| Vector
 
-    User --> |Upload PDF| API
-    User --> |"Create Plan"| Planner
-    User --> |"Quiz Me"| Quizzer
-    
-    API --> |Ingest| Vector
-    Planner --> |Structured Reasoning| Llama
-    Quizzer --> |Generation| Llama
-    Chat --> |Retrieve| Vector
-    Chat --> |Generate| Llama
-    
-    Llama --> API
 ```
 
 ## ✨ Key Features
@@ -75,6 +76,8 @@ graph TD
 | **💬 Contextual Chat** | Ask detailed questions. The agent cites sources from your specific document. | `Groq (Llama 3.1)`, `RAG` |
 | **📝 Auto-Quizzing** | The agent dynamically creates multiple-choice questions to test your retention. | `Pydantic Models` |
 | **🔒 Secure Profile** | Your learning data and documents are isolated and password-protected. | `OAuth2`, `JWT` |
+| **🧠 Multi-Agent State**| The Planner and Quizzer share a "Blackboard" state to stay in sync.  | `LangGraph` |
+| **🚀 Instant Recall**|	Chat history is retrieved from an in-memory cache for zero-lag conversations.|`Redis`|
 
 ---
 
@@ -82,7 +85,7 @@ graph TD
 
 ### 1. Clone & Setup
 ```bash
-git clone <your-repo-url>
+git clone 
 cd hack
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
@@ -111,13 +114,6 @@ uvicorn main:app --reload
 4.  **Deep Dive**: Ask, *"Explain the Krebs cycle based on Chapter 4"* (`POST /chat`).
 5.  **Test Yourself**: Request a quiz (`POST /quiz`) and get a structured JSON response with questions and answers.
 
----
-
-## 🔮 Future Roadmap
-
-*   **Multimodal Agents**: Analyzing diagrams and charts within PDFs.
-*   **Voice Interface**: Real-time oral exams with the AI.
-*   **Web Search Tool**: Letting the agent browse the web for updated information when the PDF is outdated.
 
 ---
 
