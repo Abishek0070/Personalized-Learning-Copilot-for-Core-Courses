@@ -1,4 +1,4 @@
-# 🎓 Agentic Learning Copilot
+# 🎓 Personalized-Learning-Copilot-for-Core-Courses
 
 > **Transforming static PDFs into an interactive, personalized AI Tutor.**  
 > *Built for the Agentic AI Hackathon 2026*
