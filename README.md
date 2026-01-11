@@ -40,32 +40,50 @@ graph TD
     
     subgraph "Agent Orchestration (LangGraph)"
         Graph[StateGraph]
-        Planner[Planner Node]
-        Quizzer[Quizzer Node]
+        Planner[Planner Agent]
+        Quizzer[Quiz Agent]
         RePlan{Mastery Check}
         
         Graph --> Planner
         Planner --> Quizzer
         Quizzer --> RePlan
         RePlan -->|Score < 50| Planner
-        RePlan -->|Score > 50| END((End))
+        RePlan -->|Score ≥ 50| END((Goal Achieved))
     end
     
     subgraph "Memory Layers"
         Redis[(Redis\nShort-Term Memory)]
-        SQL[(SQLite DB\nLong-Term History)]
-        Vector[(FAISS Vector Store\nPDF Knowledge)]
+        SQL[(SQLite\nLong-Term History)]
+        Vector[(FAISS Vector Store\nCourse PDFs)]
     end
     
-    User --> |Chat Request| Redis
-    Redis --> |Context| Llama[Llama 3.1-8b via Groq]
-    Llama --> |Save History| Redis
-    Llama --> |Persist| SQL
+    User --> |Chat| Redis
+    Redis --> |Context| Llama[Llama 3.1-8B via Groq]
+    Llama --> |Update Memory| Redis
+    Llama --> |Persist History| SQL
     
-    User --> |Upload| Vector
-    Graph --> |Retrieval| Vector
+    User --> |Upload PDFs| Vector
+    Graph --> |RAG Retrieval| Vector
 
 ```
+## The system follows a closed-loop learning cycle:
+
+Planner Agent Creates a personalized study plan based on user goals and syllabus.
+Quiz Agent
+Generates adaptive quizzes from course material using RAG.
+Mastery Check
+
+## Evaluates performance:
+If score < 50 → Re-plan
+If score ≥ 50 → Learning goal achieved
+
+## Memory Layers:
+Redis: short-term context
+SQLite: long-term learning history
+FAISS: vector search over PDFs
+
+This enables reflection, adaptation, and personalization core to agentic AI.
+
 
 ## ✨ Key Features
 
