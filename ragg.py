@@ -164,7 +164,7 @@ else:
     st.divider()
 
     # --- 4. QUIZ ---
-    # (Your existing Quiz code is fine, but you can add logic to save scores to MasteryRecord)
+    
     st.subheader("📝 Practice Quiz")
     if st.button("Generate Quiz"):
         res = requests.post(f"{API_URL}/quiz", json={"query": "Core concepts", "vector_id": st.session_state.vector_id}, headers=headers)
